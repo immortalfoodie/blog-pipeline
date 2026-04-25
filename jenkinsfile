@@ -1,0 +1,73 @@
+pipeline {
+
+    agent any
+
+    // ── Scheduled trigger: runs every day at 9:00 AM ──────────────────────
+    triggers {
+        cron('0 9 * * *')    // Change time as needed (cron syntax)
+    }
+
+    // ── Parameters: choose mode when triggering manually ──────────────────
+    parameters {
+        choice(
+            name: 'PUBLISH_MODE',
+            choices: ['auto', 'preview'],
+            description: 'auto = publish directly | preview = pause for manual approval'
+        )
+        string(
+            name: 'BLOG_TOPIC',
+            defaultValue: 'Python automation tips for beginners',
+            description: 'Topic for the AI-generated blog post'
+        )
+    }
+
+    // ── Credentials stored safely in Jenkins ──────────────────────────────
+    environment {
+        DEVTO_EMAIL    = credentials('DEVTO_EMAIL')
+        DEVTO_PASSWORD = credentials('DEVTO_PASSWORD')
+        GEMINI_API_KEY = credentials('GEMINI_API_KEY')
+        BLOG_TOPIC     = "${params.BLOG_TOPIC}"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo '--- Checking out source code ---'
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                echo '--- Installing Python dependencies ---'
+                sh '''
+                    pip install selenium requests --quiet
+                    # Make sure ChromeDriver is available
+                    which chromedriver || echo "WARNING: chromedriver not found in PATH"
+                '''
+            }
+        }
+
+        stage('Generate & Publish Blog') {
+            steps {
+                echo "--- Running blog pipeline in '${params.PUBLISH_MODE}' mode ---"
+                sh """
+                    python selenium/devto_poster.py \
+                        --mode ${params.PUBLISH_MODE} \
+                        --headless
+                """
+            }
+        }
+
+    }
+
+    post {
+        success {
+            echo '✅ Blog post published successfully!'
+        }
+        failure {
+            echo '❌ Pipeline failed. Check the logs above.'
+        }
+    }
+}
