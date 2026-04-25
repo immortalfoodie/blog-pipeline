@@ -21,103 +21,40 @@ BLOG_TOPIC     = os.getenv("BLOG_TOPIC", "Python automation tips for beginners")
 
 
 def generate_blog_content(topic: str) -> dict:
-    """Call Gemini API to generate blog title + body."""
-    print(f"[AI] Generating blog content for topic: '{topic}' ...")
+    """Return a static blog post (used when AI quota is exhausted)."""
+    print(f"[Content] Using static blog content for topic: '{topic}'")
+    title = f"Getting Started with {topic}"
+    body = f"""## Introduction
 
-    model_candidates = [
-        GEMINI_MODEL,
-        "gemini-2.5-flash",
-        "gemini-2.5-flash-lite",
-        "gemini-2.0-flash",
-        "gemini-2.0-flash-lite",
-        "gemini-1.5-flash",
-        "gemini-1.5-flash-latest",
-        "gemini-1.5-pro",
-        "gemini-1.5-pro-latest",
-    ]
-    # Keep order while removing duplicates.
-    model_candidates = list(dict.fromkeys(model_candidates))
+This blog post covers: **{topic}**
 
-    url_template = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-    headers = {"Content-Type": "application/json"}
-    prompt = f"""Write a blog post for Dev.to about: {topic}
+## Why This Matters
 
-Format your response EXACTLY like this (keep the markers):
-TITLE: <your title here>
-BODY:
-<the full blog body in markdown, at least 300 words>
+Automation is transforming how developers work. By combining tools like Selenium, 
+Jenkins, and Python, we can build powerful pipelines that save hours of manual effort.
+
+## Key Takeaways
+
+- Selenium handles browser automation reliably across platforms
+- Jenkins provides scheduling and CI/CD pipeline management  
+- Python ties everything together with clean, readable code
+- End-to-end automation reduces human error and increases consistency
+
+## Getting Started
+
+1. Install the required dependencies
+2. Configure your credentials securely via environment variables
+3. Test locally before connecting to Jenkins
+4. Use Jenkins parameters for flexible on-demand and scheduled runs
+
+## Conclusion
+
+Building automation pipelines is a valuable skill. Start small, test often, 
+and iterate. Tools like Selenium and Jenkins make it accessible for everyone.
+
+*Posted automatically via Selenium + Jenkins pipeline.*
 """
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}]
-    }
-
-    text = ""
-    last_error = ""
-    saw_429 = False
-    for model in model_candidates:
-        url = url_template.format(model=model)
-        response = requests.post(
-            f"{url}?key={GEMINI_API_KEY}",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-
-        # 404 usually means the model name is not available for this API key/version.
-        if response.status_code == 404:
-            print(f"[AI] Model '{model}' not found. Trying fallback model ...")
-            last_error = f"{response.status_code}: {response.text}"
-            continue
-
-        if response.status_code == 429:
-            print("[AI] Gemini API rate limit/quota reached (429). Trying fallback model ...")
-            saw_429 = True
-            last_error = f"{response.status_code}: {response.text}"
-            # Quota/rate-limit is account-level for most keys; stop to avoid noisy retries.
-            break
-
-        try:
-            response.raise_for_status()
-            text = response.json()["candidates"][0]["content"]["parts"][0]["text"]
-            print(f"[AI] Content generated with model: {model}")
-            break
-        except (requests.HTTPError, KeyError, IndexError, TypeError) as exc:
-            last_error = str(exc)
-            continue
-
-    if not text:
-        quota_hint = ""
-        if saw_429:
-            quota_hint = " Check Gemini API quota/billing in Google AI Studio, or try again later."
-        raise RuntimeError(
-            "Failed to generate content from Gemini API. "
-            "Set a valid GEMINI_MODEL (for example gemini-2.5-flash) and verify GEMINI_API_KEY."
-            f"{quota_hint} "
-            f"Last error: {last_error}"
-        )
-
-    # Parse title and body from response
-    lines = text.strip().splitlines()
-    title = ""
-    body_lines = []
-    in_body = False
-    for line in lines:
-        if line.startswith("TITLE:"):
-            title = line.replace("TITLE:", "").strip()
-        elif line.startswith("BODY:"):
-            in_body = True
-        elif in_body:
-            body_lines.append(line)
-
-    body = "\n".join(body_lines).strip()
-    if not title:
-        title = f"Blog Post: {topic}"
-    if not body:
-        body = text  # fallback: use raw output
-
-    print(f"[AI] Title generated: {title}")
     return {"title": title, "body": body}
-
 
 def get_driver(headless: bool = False) -> webdriver.Chrome:
     """Launch Chrome WebDriver."""
