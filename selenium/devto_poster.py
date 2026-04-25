@@ -15,6 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 DEVTO_EMAIL    = os.getenv("DEVTO_EMAIL", "your_email@example.com")
 DEVTO_PASSWORD = os.getenv("DEVTO_PASSWORD", "your_password")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "your_gemini_api_key")
+GEMINI_MODEL   = "gemini-2.0-flash"
 BLOG_TOPIC     = os.getenv("BLOG_TOPIC", "Python automation tips for beginners")
 # ─────────────────────────────────────────────────────────────────────────────
 
