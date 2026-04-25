@@ -38,14 +38,14 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo '--- Installing Python dependencies ---'
-                bat 'C:\\Users\\Yash Naik\\AppData\\Local\\Programs\\Python\\Python314\\Scripts\\pip.exe install selenium requests --quiet'
+                bat '"C:\\Users\\Yash Naik\\AppData\\Local\\Programs\\Python\\Python314\\Scripts\\pip.exe" install selenium requests --quiet'
             }
         }
 
         stage('Generate & Publish Blog') {
             steps {
                 echo "--- Running blog pipeline ---"
-                bat "C:\\Users\\Yash Naik\\AppData\\Local\\Programs\\Python\\Python314\\python.exe selenium/devto_poster.py --mode ${params.PUBLISH_MODE} --headless"
+                bat "\"C:\\Users\\Yash Naik\\AppData\\Local\\Programs\\Python\\Python314\\python.exe\" selenium/devto_poster.py --mode ${params.PUBLISH_MODE} --headless"
             }
         }
 
